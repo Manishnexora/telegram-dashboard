@@ -82,8 +82,10 @@ export function Billing() {
     .filter((row) => row.due)
     .filter(
       (row) =>
-        matchesSearch([row.channel.name, row.channel.owner?.name], search) &&
-        withinDateRange(row.due, filterFrom, filterTo),
+        matchesSearch(
+          [row.channel.name, row.channel.handle, row.channel.owner?.name, row.approval.negotiated_price?.toString()],
+          search,
+        ) && withinDateRange(row.due, filterFrom, filterTo),
     )
     .sort((a, b) => a.due!.getTime() - b.due!.getTime())
 
@@ -93,7 +95,7 @@ export function Billing() {
   const filteredPayments = payments.filter((p) => {
     const channel = channelByApprovalId.get(p.approval_id)
     return (
-      matchesSearch([channel?.name, p.note, p.recorder?.name], search) &&
+      matchesSearch([channel?.name, channel?.handle, p.amount?.toString(), p.note, p.recorder?.name], search) &&
       withinDateRange(p.paid_at, filterFrom, filterTo)
     )
   })
@@ -149,7 +151,6 @@ export function Billing() {
         dateTo={filterTo}
         onDateFromChange={setFilterFrom}
         onDateToChange={setFilterTo}
-        dateLabel={activeTab === 'upcoming' ? 'Next due' : 'Paid on'}
       />
 
       <div className="flex gap-2 border-b border-gray-200">

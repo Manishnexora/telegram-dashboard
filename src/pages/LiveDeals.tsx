@@ -64,8 +64,22 @@ export function LiveDeals() {
     .filter((c) => c.approvals?.[0] && isLive(c.approvals[0]))
     .filter(
       (c) =>
-        matchesSearch([c.name, c.handle, c.owner_name], search) &&
-        withinDateRange(c.channel_created_date, dateFrom, dateTo),
+        matchesSearch(
+          [
+            c.name,
+            c.handle,
+            c.owner_name,
+            c.social_link,
+            c.subscribers?.toString(),
+            c.channel_code,
+            c.whatsapp_link,
+            c.views?.toString(),
+            c.previous_deal_company,
+            c.previous_deal_amount?.toString(),
+            c.criteria,
+          ],
+          search,
+        ) && withinDateRange(c.channel_created_date, dateFrom, dateTo),
     )
   const filtersActive = Boolean(search || dateFrom || dateTo)
 
@@ -93,7 +107,6 @@ export function LiveDeals() {
         dateTo={dateTo}
         onDateFromChange={setDateFrom}
         onDateToChange={setDateTo}
-        dateLabel="Channel created"
       />
 
       <div className="bg-white rounded-lg shadow overflow-x-auto border-l-4 border-emerald-400">

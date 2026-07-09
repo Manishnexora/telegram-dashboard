@@ -55,7 +55,17 @@ export function History() {
     .filter(
       (c) =>
         matchesSearch(
-          [c.name, c.handle, c.owner?.name, c.approvals[0].decision_note, c.approvals[0].end_note],
+          [
+            c.name,
+            c.handle,
+            c.owner?.name,
+            c.subscribers?.toString(),
+            c.approvals[0].negotiated_price?.toString(),
+            c.approvals[0].status,
+            c.approvals[0].ended_at ? c.approvals[0].ender?.name : c.approvals[0].decider?.name,
+            c.approvals[0].decision_note,
+            c.approvals[0].end_note,
+          ],
           search,
         ) && withinDateRange(new Date(historyTime(c.approvals[0])), dateFrom, dateTo),
     )
@@ -86,7 +96,6 @@ export function History() {
         dateTo={dateTo}
         onDateFromChange={setDateFrom}
         onDateToChange={setDateTo}
-        dateLabel="Date"
       />
 
       <div className="bg-white rounded-lg shadow overflow-x-auto border-l-4 border-violet-400">

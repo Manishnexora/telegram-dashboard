@@ -149,7 +149,9 @@ export function TeamManagement() {
     }
   }
 
-  const filteredMembers = members.filter((m) => matchesSearch([m.name, m.email], search))
+  const filteredMembers = members.filter((m) =>
+    matchesSearch([m.name, m.email, m.role, m.approval_limit?.toString(), m.active ? 'Active' : 'Deactivated'], search),
+  )
   const filtersActive = Boolean(search)
 
   return (

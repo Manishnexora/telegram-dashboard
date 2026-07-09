@@ -69,8 +69,17 @@ export function NewDeals() {
     })
     .filter(
       (c) =>
-        matchesSearch([c.name, c.handle, c.owner?.name], search) &&
-        withinDateRange(c.approvals[0].updated_at, dateFrom, dateTo),
+        matchesSearch(
+          [
+            c.name,
+            c.handle,
+            c.owner?.name,
+            c.subscribers?.toString(),
+            c.approvals[0].asking_price?.toString(),
+            c.approvals[0].negotiated_price?.toString(),
+          ],
+          search,
+        ) && withinDateRange(c.approvals[0].updated_at, dateFrom, dateTo),
     )
     .sort((a, b) => {
       const aTime = new Date(a.approvals[0].updated_at).getTime()
@@ -158,7 +167,6 @@ export function NewDeals() {
         dateTo={dateTo}
         onDateFromChange={setDateFrom}
         onDateToChange={setDateTo}
-        dateLabel="Waiting since"
       />
 
       <div className="bg-white rounded-lg shadow overflow-x-auto border-l-4 border-amber-400">

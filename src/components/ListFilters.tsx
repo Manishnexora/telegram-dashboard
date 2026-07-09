@@ -6,7 +6,6 @@ interface ListFiltersProps {
   dateTo?: string
   onDateFromChange?: (v: string) => void
   onDateToChange?: (v: string) => void
-  dateLabel?: string
 }
 
 export function ListFilters({
@@ -17,7 +16,6 @@ export function ListFilters({
   dateTo,
   onDateFromChange,
   onDateToChange,
-  dateLabel,
 }: ListFiltersProps) {
   const showDateRange = onDateFromChange && onDateToChange
 
@@ -33,26 +31,21 @@ export function ListFilters({
         />
       </div>
       {showDateRange && (
-        <>
-          <div className="space-y-1">
-            <label className="block text-xs font-medium text-gray-500">{dateLabel ?? 'Date'} from</label>
-            <input
-              type="date"
-              value={dateFrom}
-              onChange={(e) => onDateFromChange!(e.target.value)}
-              className="rounded border border-gray-300 px-3 py-2 text-sm"
-            />
-          </div>
-          <div className="space-y-1">
-            <label className="block text-xs font-medium text-gray-500">to</label>
-            <input
-              type="date"
-              value={dateTo}
-              onChange={(e) => onDateToChange!(e.target.value)}
-              className="rounded border border-gray-300 px-3 py-2 text-sm"
-            />
-          </div>
-        </>
+        <div className="flex items-center gap-2">
+          <input
+            type="date"
+            value={dateFrom}
+            onChange={(e) => onDateFromChange!(e.target.value)}
+            className="rounded border border-gray-300 px-3 py-2 text-sm"
+          />
+          <span className="text-gray-400 text-sm">–</span>
+          <input
+            type="date"
+            value={dateTo}
+            onChange={(e) => onDateToChange!(e.target.value)}
+            className="rounded border border-gray-300 px-3 py-2 text-sm"
+          />
+        </div>
       )}
     </div>
   )

@@ -46,11 +46,23 @@ export function Channels() {
   const isTeammate = profile?.role === 'teammate'
   const rejected = channels.filter((c) => c.approvals?.[0]?.status === 'rejected')
 
-  const filteredChannels = channels.filter(
-    (c) =>
-      matchesSearch([c.name, c.handle, c.owner?.name], search) &&
-      withinDateRange(c.created_at, dateFrom, dateTo),
-  )
+  const filteredChannels = channels.filter((c) => {
+    const approval = c.approvals?.[0]
+    return (
+      matchesSearch(
+        [
+          c.name,
+          c.handle,
+          c.owner?.name,
+          c.subscribers?.toString(),
+          approval?.asking_price?.toString(),
+          approval?.negotiated_price?.toString(),
+          approval?.status,
+        ],
+        search,
+      ) && withinDateRange(c.created_at, dateFrom, dateTo)
+    )
+  })
   const filtersActive = Boolean(search || dateFrom || dateTo)
 
   return (
@@ -90,7 +102,6 @@ export function Channels() {
         dateTo={dateTo}
         onDateFromChange={setDateFrom}
         onDateToChange={setDateTo}
-        dateLabel="Channel added"
       />
 
       <div className="bg-white rounded-lg shadow overflow-x-auto border-l-4 border-sky-400">
