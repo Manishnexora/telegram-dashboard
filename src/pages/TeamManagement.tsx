@@ -1,5 +1,7 @@
 import { Fragment, useEffect, useState, type FormEvent } from 'react'
 import { supabase } from '../lib/supabase'
+import { ListFilters } from '../components/ListFilters'
+import { matchesSearch } from '../lib/listFilters'
 import type { Role } from '../types'
 
 interface TeamMember {
@@ -19,6 +21,7 @@ export function TeamManagement() {
   const [members, setMembers] = useState<TeamMember[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [search, setSearch] = useState('')
 
   const [showAddForm, setShowAddForm] = useState(false)
   const [newName, setNewName] = useState('')
@@ -146,6 +149,9 @@ export function TeamManagement() {
     }
   }
 
+  const filteredMembers = members.filter((m) => matchesSearch([m.name, m.email], search))
+  const filtersActive = Boolean(search)
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -239,6 +245,8 @@ export function TeamManagement() {
           </form>
         )}
 
+        <ListFilters search={search} onSearchChange={setSearch} searchPlaceholder="Search by name or email…" />
+
         <div className="bg-white rounded-lg shadow overflow-x-auto border-l-4 border-indigo-400">
           <table className="w-full text-sm">
             <thead className="bg-indigo-50 text-left text-indigo-800">
@@ -255,10 +263,12 @@ export function TeamManagement() {
               {loading && (
                 <tr><td colSpan={6} className="px-4 py-4 text-gray-400">Loading…</td></tr>
               )}
-              {!loading && members.length === 0 && (
-                <tr><td colSpan={6} className="px-4 py-4 text-gray-400">No team members yet.</td></tr>
+              {!loading && filteredMembers.length === 0 && (
+                <tr><td colSpan={6} className="px-4 py-4 text-gray-400">
+                  {filtersActive ? 'No results match your search.' : 'No team members yet.'}
+                </td></tr>
               )}
-              {members.map((m) => {
+              {filteredMembers.map((m) => {
                 const isOpen = editingId === m.id
                 return (
                   <Fragment key={m.id}>

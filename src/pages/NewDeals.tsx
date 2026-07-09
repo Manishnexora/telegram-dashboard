@@ -3,6 +3,8 @@ import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { supervisorEligible } from '../lib/approvalEligibility'
+import { ListFilters } from '../components/ListFilters'
+import { matchesSearch, withinDateRange } from '../lib/listFilters'
 import type { Approval, Channel } from '../types'
 
 interface ChannelRow extends Channel {
@@ -20,6 +22,9 @@ export function NewDeals() {
   const [busy, setBusy] = useState(false)
   const [rejectingId, setRejectingId] = useState<string | null>(null)
   const [rejectNote, setRejectNote] = useState('')
+  const [search, setSearch] = useState('')
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
 
   async function load() {
     setLoading(true)
@@ -62,11 +67,17 @@ export function NewDeals() {
       const isMine = approval.submitted_by === profile?.id
       return isMine || isAdmin || supervisorEligible(approval, supervisorLimit)
     })
+    .filter(
+      (c) =>
+        matchesSearch([c.name, c.handle, c.owner?.name], search) &&
+        withinDateRange(c.approvals[0].updated_at, dateFrom, dateTo),
+    )
     .sort((a, b) => {
       const aTime = new Date(a.approvals[0].updated_at).getTime()
       const bTime = new Date(b.approvals[0].updated_at).getTime()
       return aTime - bTime
     })
+  const filtersActive = Boolean(search || dateFrom || dateTo)
 
   function canDecide(approval: Approval) {
     return isAdmin || (isSupervisor && supervisorEligible(approval, supervisorLimit))
@@ -139,6 +150,17 @@ export function NewDeals() {
         </div>
       )}
 
+      <ListFilters
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search by channel name, handle, or submitter…"
+        dateFrom={dateFrom}
+        dateTo={dateTo}
+        onDateFromChange={setDateFrom}
+        onDateToChange={setDateTo}
+        dateLabel="Waiting since"
+      />
+
       <div className="bg-white rounded-lg shadow overflow-x-auto border-l-4 border-amber-400">
         <table className="w-full text-sm">
           <thead className="bg-amber-50 text-left text-amber-800">
@@ -157,7 +179,9 @@ export function NewDeals() {
               <tr><td colSpan={7} className="px-4 py-4 text-gray-400">Loading…</td></tr>
             )}
             {!loading && queueItems.length === 0 && (
-              <tr><td colSpan={7} className="px-4 py-4 text-gray-400">Nothing is waiting on you right now.</td></tr>
+              <tr><td colSpan={7} className="px-4 py-4 text-gray-400">
+                {filtersActive ? 'No results match your search/filters.' : 'Nothing is waiting on you right now.'}
+              </td></tr>
             )}
             {queueItems.map((c) => {
               const approval = c.approvals[0]

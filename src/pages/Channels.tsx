@@ -3,6 +3,8 @@ import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { StatusBadge } from '../components/StatusBadge'
+import { ListFilters } from '../components/ListFilters'
+import { matchesSearch, withinDateRange } from '../lib/listFilters'
 import type { Approval, Channel } from '../types'
 
 interface ChannelRow extends Channel {
@@ -16,6 +18,9 @@ export function Channels() {
   const [channels, setChannels] = useState<ChannelRow[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [search, setSearch] = useState('')
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
 
   async function load() {
     setLoading(true)
@@ -40,6 +45,13 @@ export function Channels() {
   const showOwnerColumn = profile?.role !== 'teammate'
   const isTeammate = profile?.role === 'teammate'
   const rejected = channels.filter((c) => c.approvals?.[0]?.status === 'rejected')
+
+  const filteredChannels = channels.filter(
+    (c) =>
+      matchesSearch([c.name, c.handle, c.owner?.name], search) &&
+      withinDateRange(c.created_at, dateFrom, dateTo),
+  )
+  const filtersActive = Boolean(search || dateFrom || dateTo)
 
   return (
     <div className="space-y-4">
@@ -70,6 +82,17 @@ export function Channels() {
         </div>
       )}
 
+      <ListFilters
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search by channel name, handle, or manager…"
+        dateFrom={dateFrom}
+        dateTo={dateTo}
+        onDateFromChange={setDateFrom}
+        onDateToChange={setDateTo}
+        dateLabel="Channel added"
+      />
+
       <div className="bg-white rounded-lg shadow overflow-x-auto border-l-4 border-sky-400">
         <table className="w-full text-sm">
           <thead className="bg-sky-50 text-left text-sky-800">
@@ -86,10 +109,12 @@ export function Channels() {
             {loading && (
               <tr><td colSpan={6} className="px-4 py-4 text-gray-400">Loading…</td></tr>
             )}
-            {!loading && channels.length === 0 && (
-              <tr><td colSpan={6} className="px-4 py-4 text-gray-400">No channels yet.</td></tr>
+            {!loading && filteredChannels.length === 0 && (
+              <tr><td colSpan={6} className="px-4 py-4 text-gray-400">
+                {filtersActive ? 'No results match your search/filters.' : 'No channels yet.'}
+              </td></tr>
             )}
-            {channels.map((c) => {
+            {filteredChannels.map((c) => {
               const approval = c.approvals?.[0]
               return (
                 <tr

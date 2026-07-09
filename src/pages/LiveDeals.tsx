@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { isLive } from '../lib/dealStatus'
 import { ensureUrl, telegramLink } from '../lib/links'
+import { ListFilters } from '../components/ListFilters'
+import { matchesSearch, withinDateRange } from '../lib/listFilters'
 import type { Approval, Channel } from '../types'
 
 interface LiveApproval extends Approval {
@@ -34,6 +36,9 @@ export function LiveDeals() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [search, setSearch] = useState('')
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
 
   async function load() {
     setLoading(true)
@@ -55,7 +60,14 @@ export function LiveDeals() {
     load()
   }, [])
 
-  const liveDeals = channels.filter((c) => c.approvals?.[0] && isLive(c.approvals[0]))
+  const liveDeals = channels
+    .filter((c) => c.approvals?.[0] && isLive(c.approvals[0]))
+    .filter(
+      (c) =>
+        matchesSearch([c.name, c.handle, c.owner_name], search) &&
+        withinDateRange(c.channel_created_date, dateFrom, dateTo),
+    )
+  const filtersActive = Boolean(search || dateFrom || dateTo)
 
   return (
     <div className="space-y-4">
@@ -72,6 +84,17 @@ export function LiveDeals() {
           {error}
         </div>
       )}
+
+      <ListFilters
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search by channel name, handle, or owner…"
+        dateFrom={dateFrom}
+        dateTo={dateTo}
+        onDateFromChange={setDateFrom}
+        onDateToChange={setDateTo}
+        dateLabel="Channel created"
+      />
 
       <div className="bg-white rounded-lg shadow overflow-x-auto border-l-4 border-emerald-400">
         <table className="w-full text-sm whitespace-nowrap">
@@ -97,7 +120,9 @@ export function LiveDeals() {
               <tr><td colSpan={13} className="px-4 py-4 text-gray-400">Loading…</td></tr>
             )}
             {!loading && liveDeals.length === 0 && (
-              <tr><td colSpan={13} className="px-4 py-4 text-gray-400">No live deals right now.</td></tr>
+              <tr><td colSpan={13} className="px-4 py-4 text-gray-400">
+                {filtersActive ? 'No results match your search/filters.' : 'No live deals right now.'}
+              </td></tr>
             )}
             {liveDeals.map((c) => {
               const approval = c.approvals[0]

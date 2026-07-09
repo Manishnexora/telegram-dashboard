@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { isHistorical } from '../lib/dealStatus'
 import { StatusBadge } from '../components/StatusBadge'
+import { ListFilters } from '../components/ListFilters'
+import { matchesSearch, withinDateRange } from '../lib/listFilters'
 import type { Approval, Channel } from '../types'
 
 interface HistoryApproval extends Approval {
@@ -24,6 +26,9 @@ export function History() {
   const [channels, setChannels] = useState<ChannelRow[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [search, setSearch] = useState('')
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
 
   async function load() {
     setLoading(true)
@@ -47,7 +52,15 @@ export function History() {
 
   const historyItems = channels
     .filter((c) => c.approvals?.[0] && isHistorical(c.approvals[0]))
+    .filter(
+      (c) =>
+        matchesSearch(
+          [c.name, c.handle, c.owner?.name, c.approvals[0].decision_note, c.approvals[0].end_note],
+          search,
+        ) && withinDateRange(new Date(historyTime(c.approvals[0])), dateFrom, dateTo),
+    )
     .sort((a, b) => historyTime(b.approvals[0]) - historyTime(a.approvals[0]))
+  const filtersActive = Boolean(search || dateFrom || dateTo)
 
   return (
     <div className="space-y-4">
@@ -64,6 +77,17 @@ export function History() {
           {error}
         </div>
       )}
+
+      <ListFilters
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search by channel name, handle, owner, or note…"
+        dateFrom={dateFrom}
+        dateTo={dateTo}
+        onDateFromChange={setDateFrom}
+        onDateToChange={setDateTo}
+        dateLabel="Date"
+      />
 
       <div className="bg-white rounded-lg shadow overflow-x-auto border-l-4 border-violet-400">
         <table className="w-full text-sm">
@@ -84,7 +108,9 @@ export function History() {
               <tr><td colSpan={8} className="px-4 py-4 text-gray-400">Loading…</td></tr>
             )}
             {!loading && historyItems.length === 0 && (
-              <tr><td colSpan={8} className="px-4 py-4 text-gray-400">Nothing in history yet.</td></tr>
+              <tr><td colSpan={8} className="px-4 py-4 text-gray-400">
+                {filtersActive ? 'No results match your search/filters.' : 'Nothing in history yet.'}
+              </td></tr>
             )}
             {historyItems.map((c) => {
               const approval = c.approvals[0]

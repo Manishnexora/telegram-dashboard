@@ -4,6 +4,8 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { isLive } from '../lib/dealStatus'
 import { nextDueDate } from '../lib/paymentTerms'
+import { ListFilters } from '../components/ListFilters'
+import { matchesSearch, withinDateRange } from '../lib/listFilters'
 import type { Approval, Channel, Payment } from '../types'
 
 interface ChannelRow extends Channel {
@@ -29,6 +31,9 @@ export function Billing() {
   const [paidAt, setPaidAt] = useState('')
   const [note, setNote] = useState('')
   const [activeTab, setActiveTab] = useState<'upcoming' | 'history'>('upcoming')
+  const [search, setSearch] = useState('')
+  const [filterFrom, setFilterFrom] = useState('')
+  const [filterTo, setFilterTo] = useState('')
 
   async function load() {
     setLoading(true)
@@ -75,10 +80,24 @@ export function Billing() {
       return { channel: c, approval, due }
     })
     .filter((row) => row.due)
+    .filter(
+      (row) =>
+        matchesSearch([row.channel.name, row.channel.owner?.name], search) &&
+        withinDateRange(row.due, filterFrom, filterTo),
+    )
     .sort((a, b) => a.due!.getTime() - b.due!.getTime())
 
   const channelByApprovalId = new Map<string, ChannelRow>()
   channels.forEach((c) => c.approvals?.forEach((a) => channelByApprovalId.set(a.id, c)))
+
+  const filteredPayments = payments.filter((p) => {
+    const channel = channelByApprovalId.get(p.approval_id)
+    return (
+      matchesSearch([channel?.name, p.note, p.recorder?.name], search) &&
+      withinDateRange(p.paid_at, filterFrom, filterTo)
+    )
+  })
+  const filtersActive = Boolean(search || filterFrom || filterTo)
 
   function startRecording(approvalId: string, defaultAmount: number | null) {
     setRecordingFor(approvalId)
@@ -122,6 +141,17 @@ export function Billing() {
         </div>
       )}
 
+      <ListFilters
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search by channel or note…"
+        dateFrom={filterFrom}
+        dateTo={filterTo}
+        onDateFromChange={setFilterFrom}
+        onDateToChange={setFilterTo}
+        dateLabel={activeTab === 'upcoming' ? 'Next due' : 'Paid on'}
+      />
+
       <div className="flex gap-2 border-b border-gray-200">
         <button
           onClick={() => setActiveTab('upcoming')}
@@ -163,7 +193,11 @@ export function Billing() {
                 <tr><td colSpan={6} className="px-4 py-4 text-gray-400">Loading…</td></tr>
               )}
               {!loading && upcoming.length === 0 && (
-                <tr><td colSpan={6} className="px-4 py-4 text-gray-400">No upcoming payments — set payment terms on a live deal to see reminders here.</td></tr>
+                <tr><td colSpan={6} className="px-4 py-4 text-gray-400">
+                  {filtersActive
+                    ? 'No results match your search/filters.'
+                    : 'No upcoming payments — set payment terms on a live deal to see reminders here.'}
+                </td></tr>
               )}
               {upcoming.map(({ channel, approval, due }) => {
                 const days = daysUntil(due!)
@@ -263,10 +297,12 @@ export function Billing() {
               </tr>
             </thead>
             <tbody>
-              {!loading && payments.length === 0 && (
-                <tr><td colSpan={5} className="px-4 py-4 text-gray-400">No payments recorded yet.</td></tr>
+              {!loading && filteredPayments.length === 0 && (
+                <tr><td colSpan={5} className="px-4 py-4 text-gray-400">
+                  {filtersActive ? 'No results match your search/filters.' : 'No payments recorded yet.'}
+                </td></tr>
               )}
-              {payments.map((p) => {
+              {filteredPayments.map((p) => {
                 const channel = channelByApprovalId.get(p.approval_id)
                 return (
                   <tr key={p.id} className="border-t border-gray-100">
