@@ -160,6 +160,22 @@ create table public.payments (
   created_at timestamptz not null default now()
 );
 
+-- Indexes on foreign key columns — Postgres does not create these
+-- automatically (only for primary/unique keys), and every page load joins
+-- channels -> approvals -> profiles while RLS policies add their own
+-- exists(...) subqueries on these same columns.
+create index if not exists channels_managed_by_idx on public.channels (managed_by);
+create index if not exists approvals_channel_id_idx on public.approvals (channel_id);
+create index if not exists approvals_submitted_by_idx on public.approvals (submitted_by);
+create index if not exists approvals_decided_by_idx on public.approvals (decided_by);
+create index if not exists approvals_ended_by_idx on public.approvals (ended_by);
+create index if not exists negotiation_proofs_approval_id_idx on public.negotiation_proofs (approval_id);
+create index if not exists negotiation_proofs_uploaded_by_idx on public.negotiation_proofs (uploaded_by);
+create index if not exists price_guidance_log_approval_id_idx on public.price_guidance_log (approval_id);
+create index if not exists price_guidance_log_set_by_idx on public.price_guidance_log (set_by);
+create index if not exists payments_approval_id_idx on public.payments (approval_id);
+create index if not exists payments_recorded_by_idx on public.payments (recorded_by);
+
 -- ============================================================
 -- Helper functions (used inside the security rules below —
 -- written this way to avoid a table checking its own rules

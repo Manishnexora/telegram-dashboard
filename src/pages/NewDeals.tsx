@@ -25,26 +25,23 @@ export function NewDeals() {
     setLoading(true)
     setError(null)
 
-    const { data, error } = await supabase
-      .from('channels')
-      .select('*, approvals(*), owner:profiles!managed_by(name)')
-      .order('created_at', { ascending: true })
+    const [channelsResult, limitResult] = await Promise.all([
+      supabase
+        .from('channels')
+        .select('*, approvals(*), owner:profiles!managed_by(name)')
+        .order('created_at', { ascending: true }),
+      profile?.role === 'supervisor'
+        ? supabase.from('supervisor_limits').select('approval_limit').eq('user_id', profile.id).maybeSingle()
+        : Promise.resolve({ data: null, error: null }),
+    ])
 
-    if (error) {
-      setError(error.message)
+    if (channelsResult.error) {
+      setError(channelsResult.error.message)
       setLoading(false)
       return
     }
-    setChannels((data as unknown as ChannelRow[]) ?? [])
-
-    if (profile?.role === 'supervisor') {
-      const { data: limitData } = await supabase
-        .from('supervisor_limits')
-        .select('approval_limit')
-        .eq('user_id', profile.id)
-        .maybeSingle()
-      setSupervisorLimit(limitData?.approval_limit ?? null)
-    }
+    setChannels((channelsResult.data as unknown as ChannelRow[]) ?? [])
+    setSupervisorLimit(limitResult.data?.approval_limit ?? null)
 
     setLoading(false)
   }
