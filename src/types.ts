@@ -77,6 +77,15 @@ export interface Payment {
   recorder?: { name: string } | null
 }
 
+export interface ChannelStatsSnapshot {
+  id: string
+  channel_id: string
+  subscribers: number | null
+  views: number | null
+  likes: number | null
+  recorded_at: string
+}
+
 export interface PriceGuidance {
   id: string
   approval_id: string

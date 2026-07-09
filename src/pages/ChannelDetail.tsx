@@ -13,11 +13,13 @@ import {
   PROOF_STAGES,
   type Approval,
   type Channel,
+  type ChannelStatsSnapshot,
   type NegotiationProof,
   type PaymentPeriodUnit,
   type PriceGuidance,
   type ProofStage,
 } from '../types'
+import { SubscriberGrowthChart } from '../components/SubscriberGrowthChart'
 
 interface ApprovalWithNames extends Approval {
   decider?: { name: string } | null
@@ -32,6 +34,7 @@ export function ChannelDetail() {
   const [approval, setApproval] = useState<ApprovalWithNames | null>(null)
   const [proofs, setProofs] = useState<NegotiationProof[]>([])
   const [guidanceLog, setGuidanceLog] = useState<PriceGuidance[]>([])
+  const [statsHistory, setStatsHistory] = useState<ChannelStatsSnapshot[]>([])
   const [supervisorLimit, setSupervisorLimit] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -70,6 +73,13 @@ export function ChannelDetail() {
       return
     }
     setChannel(channelData)
+
+    const { data: historyData } = await supabase
+      .from('channel_stats_history')
+      .select('*')
+      .eq('channel_id', id)
+      .order('recorded_at', { ascending: true })
+    setStatsHistory(historyData ?? [])
 
     const { data: approvalData, error: approvalErr } = await supabase
       .from('approvals')
@@ -174,11 +184,11 @@ export function ChannelDetail() {
     setStatsNotes([])
     try {
       const stats = await fetchTelegramStats(channel.handle)
-      await saveChannelInfo({
-        subscribers: stats.subscribers ?? channel.subscribers,
-        views: stats.avg_views ?? channel.views,
-        likes: stats.avg_reactions ?? channel.likes,
-      })
+      const subscribers = stats.subscribers ?? channel.subscribers
+      const views = stats.avg_views ?? channel.views
+      const likes = stats.avg_reactions ?? channel.likes
+      await saveChannelInfo({ subscribers, views, likes })
+      await supabase.from('channel_stats_history').insert({ channel_id: channel.id, subscribers, views, likes })
       setStatsNotes(stats.notes)
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
@@ -436,6 +446,11 @@ export function ChannelDetail() {
             onSave={(v) => saveChannelInfo({ previous_deal_amount: v ? Number(v) : null })} />
           <Field label="Criteria" value={channel.criteria} editable={canEditChannelInfo}
             onSave={(v) => saveChannelInfo({ criteria: v || null })} />
+        </div>
+
+        <div className="border-t border-gray-100 pt-4">
+          <h4 className="text-sm font-medium text-gray-700 mb-2">Subscriber growth</h4>
+          <SubscriberGrowthChart history={statsHistory} />
         </div>
       </section>
 

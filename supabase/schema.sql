@@ -63,6 +63,18 @@ create table public.channels (
   created_at timestamptz not null default now()
 );
 
+-- 3b. Channel stats history: periodic snapshots (automatic daily + manual
+-- "Refresh stats" clicks) so growth over time can be charted, separate from
+-- the flat current-value fields on `channels` itself.
+create table public.channel_stats_history (
+  id uuid primary key default gen_random_uuid(),
+  channel_id uuid not null references public.channels (id) on delete cascade,
+  subscribers integer,
+  views integer,
+  likes integer,
+  recorded_at timestamptz not null default now()
+);
+
 -- 4. Channel rentals: the brokerage terms (current state per channel).
 create table public.channel_rentals (
   id uuid primary key default gen_random_uuid(),
@@ -175,6 +187,8 @@ create index if not exists price_guidance_log_approval_id_idx on public.price_gu
 create index if not exists price_guidance_log_set_by_idx on public.price_guidance_log (set_by);
 create index if not exists payments_approval_id_idx on public.payments (approval_id);
 create index if not exists payments_recorded_by_idx on public.payments (recorded_by);
+create index if not exists channel_stats_history_channel_id_idx
+  on public.channel_stats_history (channel_id, recorded_at);
 
 -- ============================================================
 -- Helper functions (used inside the security rules below —
@@ -214,6 +228,7 @@ alter table public.channel_rentals enable row level security;
 alter table public.approvals enable row level security;
 alter table public.negotiation_proofs enable row level security;
 alter table public.price_guidance_log enable row level security;
+alter table public.channel_stats_history enable row level security;
 
 -- profiles: any signed-in team member can see names; only admin edits roles.
 create policy "profiles: read all" on public.profiles for select using (auth.role() = 'authenticated');
@@ -248,6 +263,21 @@ create policy "rentals: owner or admin update" on public.channel_rentals for upd
   using (exists (
     select 1 from public.channels c where c.id = channel_id
       and (c.managed_by = auth.uid() or public.current_role() = 'admin')
+  ));
+
+-- channel_stats_history: visibility follows the parent channel, same as rentals.
+create policy "stats history: visible with channel" on public.channel_stats_history for select
+  using (exists (
+    select 1 from public.channels c where c.id = channel_id
+      and (public.current_role() in ('admin', 'supervisor') or c.managed_by = auth.uid())
+  ));
+-- Lets the manual "Refresh stats" button (runs as the logged-in user) record
+-- a snapshot too — the scheduled snapshot function uses service_role and
+-- bypasses RLS entirely.
+create policy "stats history: owner or admin/supervisor insert" on public.channel_stats_history for insert
+  with check (exists (
+    select 1 from public.channels c where c.id = channel_id
+      and (c.managed_by = auth.uid() or public.current_role() in ('admin', 'supervisor'))
   ));
 
 -- approvals: teammates see/edit their own; admin and supervisors see the full portfolio
