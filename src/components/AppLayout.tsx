@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import type { Role } from '../types'
+import { ROLE_LABELS, type Role } from '../types'
 
 interface NavItem {
   to: string
@@ -87,7 +87,7 @@ export function AppLayout() {
 
         <div className="px-4 py-4 border-t border-white/20 text-sm">
           <div className="text-white truncate">{profile?.name}</div>
-          <div className="text-white/70 text-xs mb-2">({profile?.role})</div>
+          <div className="text-white/70 text-xs mb-2">({profile?.role && ROLE_LABELS[profile.role]})</div>
           <button onClick={signOut} className="text-white/90 hover:text-white hover:underline">
             Sign out
           </button>

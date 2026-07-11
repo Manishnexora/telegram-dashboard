@@ -1,5 +1,14 @@
 export type Role = 'admin' | 'supervisor' | 'teammate'
 
+// Display names only — the stored values ('admin'/'supervisor'/'teammate')
+// are unchanged in the database and every permission check; this just
+// relabels what's shown on screen.
+export const ROLE_LABELS: Record<Role, string> = {
+  admin: 'Superadmin',
+  supervisor: 'Admin',
+  teammate: 'Analyst',
+}
+
 export interface Profile {
   id: string
   name: string

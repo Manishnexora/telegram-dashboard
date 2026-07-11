@@ -524,11 +524,11 @@ export function ChannelDetail() {
           </div>
         )}
         {isOwner && approval.status === 'price_check' && (
-          <p className="text-sm text-amber-700">Waiting for a target price from an admin or supervisor.</p>
+          <p className="text-sm text-amber-700">Waiting for a target price from a superadmin or admin.</p>
         )}
         {isOwner && !isDecided && (
           <p className="text-sm text-gray-500">
-            An admin or supervisor can approve or reject this channel at any time — there's no separate "submit" step.
+            A superadmin or admin can approve or reject this channel at any time — there's no separate "submit" step.
           </p>
         )}
 
@@ -585,7 +585,7 @@ export function ChannelDetail() {
 
         {!isDecided && isSupervisor && !canGiveGuidance && (approval.asking_price != null || approval.negotiated_price != null) && (
           <p className="text-sm text-gray-500 border-t border-gray-100 pt-4">
-            This price is above your approval limit{supervisorLimit ? ` (₹${supervisorLimit.toLocaleString('en-IN')})` : ''} — an admin or higher-limit supervisor needs to respond.
+            This price is above your approval limit{supervisorLimit ? ` (₹${supervisorLimit.toLocaleString('en-IN')})` : ''} — a superadmin or higher-limit admin needs to respond.
           </p>
         )}
 
@@ -637,8 +637,8 @@ export function ChannelDetail() {
         {!isDecided && isSupervisor && !canDecide && (
           <p className="text-sm text-gray-500 border-t border-gray-100 pt-4">
             {approval.negotiated_price == null
-              ? 'No price has been set on this channel — only an Admin can approve or reject it.'
-              : `This negotiated price is above your approval limit${supervisorLimit ? ` (₹${supervisorLimit.toLocaleString('en-IN')})` : ''} — an admin or higher-limit supervisor needs to decide.`}
+              ? 'No price has been set on this channel — only a Superadmin can approve or reject it.'
+              : `This negotiated price is above your approval limit${supervisorLimit ? ` (₹${supervisorLimit.toLocaleString('en-IN')})` : ''} — a superadmin or higher-limit admin needs to decide.`}
           </p>
         )}
 

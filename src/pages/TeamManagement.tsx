@@ -2,7 +2,7 @@ import { Fragment, useEffect, useState, type FormEvent } from 'react'
 import { supabase } from '../lib/supabase'
 import { ListFilters } from '../components/ListFilters'
 import { matchesSearch } from '../lib/listFilters'
-import type { Role } from '../types'
+import { ROLE_LABELS, type Role } from '../types'
 
 interface TeamMember {
   id: string
@@ -150,7 +150,10 @@ export function TeamManagement() {
   }
 
   const filteredMembers = members.filter((m) =>
-    matchesSearch([m.name, m.email, m.role, m.approval_limit?.toString(), m.active ? 'Active' : 'Deactivated'], search),
+    matchesSearch(
+      [m.name, m.email, m.role, ROLE_LABELS[m.role], m.approval_limit?.toString(), m.active ? 'Active' : 'Deactivated'],
+      search,
+    ),
   )
   const filtersActive = Boolean(search)
 
@@ -220,7 +223,7 @@ export function TeamManagement() {
                 className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
               >
                 {ROLES.map((r) => (
-                  <option key={r} value={r}>{r}</option>
+                  <option key={r} value={r}>{ROLE_LABELS[r]}</option>
                 ))}
               </select>
             </div>
@@ -277,7 +280,7 @@ export function TeamManagement() {
                     <tr className="border-t border-gray-100">
                       <td className="px-4 py-2">{m.name}</td>
                       <td className="px-4 py-2">{m.email}</td>
-                      <td className="px-4 py-2">{m.role}</td>
+                      <td className="px-4 py-2">{ROLE_LABELS[m.role]}</td>
                       <td className="px-4 py-2">
                         {m.approval_limit ? `₹${m.approval_limit.toLocaleString('en-IN')}` : <span className="text-gray-400">—</span>}
                       </td>
@@ -316,7 +319,7 @@ export function TeamManagement() {
                                   className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
                                 >
                                   {ROLES.map((r) => (
-                                    <option key={r} value={r}>{r}</option>
+                                    <option key={r} value={r}>{ROLE_LABELS[r]}</option>
                                   ))}
                                 </select>
                               </div>

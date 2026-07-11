@@ -37,7 +37,7 @@ Deno.serve(async (req) => {
       .single()
 
     if (profileErr || callerProfile?.role !== 'admin') {
-      return json({ error: 'Admins only' }, 403)
+      return json({ error: 'Superadmins only' }, 403)
     }
 
     const body = await req.json()
@@ -142,7 +142,7 @@ Deno.serve(async (req) => {
       }
       const { data: targetProfile } = await admin.from('profiles').select('role').eq('id', user_id).single()
       if (targetProfile?.role === 'admin') {
-        return json({ error: 'Admins cannot be deactivated' }, 400)
+        return json({ error: 'Superadmins cannot be deactivated' }, 400)
       }
       const { error } = await admin.auth.admin.updateUserById(user_id, {
         ban_duration: active ? 'none' : '876000h',
@@ -160,7 +160,7 @@ Deno.serve(async (req) => {
       }
       const { data: targetProfile } = await admin.from('profiles').select('role').eq('id', user_id).single()
       if (targetProfile?.role === 'admin') {
-        return json({ error: 'Admins cannot be removed' }, 400)
+        return json({ error: 'Superadmins cannot be removed' }, 400)
       }
       const { error } = await admin.auth.admin.deleteUser(user_id)
       if (error) return json({ error: error.message }, 400)
