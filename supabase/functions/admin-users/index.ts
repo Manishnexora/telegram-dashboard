@@ -45,14 +45,17 @@ Deno.serve(async (req) => {
 
     // ---- List every team member, with their limit and active/deactivated status ----
     if (action === 'list') {
-      const { data: profiles, error } = await admin
-        .from('profiles')
-        .select('id, name, email, role, created_at')
-        .order('created_at', { ascending: true })
+      const [profilesResult, limitsResult, authUsersResult] = await Promise.all([
+        admin.from('profiles').select('id, name, email, role, created_at').order('created_at', { ascending: true }),
+        admin.from('supervisor_limits').select('*'),
+        admin.auth.admin.listUsers({ perPage: 1000 }),
+      ])
+
+      const { data: profiles, error } = profilesResult
       if (error) return json({ error: error.message }, 400)
 
-      const { data: limits } = await admin.from('supervisor_limits').select('*')
-      const { data: authUsersPage } = await admin.auth.admin.listUsers({ perPage: 1000 })
+      const { data: limits } = limitsResult
+      const { data: authUsersPage } = authUsersResult
 
       const merged = (profiles ?? []).map((p) => {
         const limit = limits?.find((l) => l.user_id === p.id)
